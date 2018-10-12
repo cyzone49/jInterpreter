@@ -1,0 +1,71 @@
+        Correct output:
+1. Pass
+2. Error
+3. Error
+4. Main.ExtInt.NumVal(3)
+5. Main.ExtInt.NumVal(1)
+6. Pass
+7. Pass
+8. Error
+9. Error
+10. Main.ExtInt.NumVal(4)
+
+        Your output:
+expr = Any[:+, 1, Any[:-, 3, 4]] with length = 3
+expr = Any[:-, 3, 4] with length = 3
+1. Pass
+expr = Any[:-] with length = 1
+2. Error
+3. Error
+expr = Any[:if0, 1, 2, 3] with length = 4
+4. Main.ExtInt.NumVal(3)
+expr = Any[:with, Any[Any[:x, 1]], :x] with length = 3
+
+Parsing WithNode
+	symbol is valid
+	symbol is not repeated
+param_dict = Dict{Any,Any}(VarRefNode(:x)=>NumNode(1))
+5. Main.ExtInt.NumVal(1)
+expr = Any[:lambda, Any[:x], :x] with length = 3
+Parsing FuncDefNode
+param_array = Any[:x]
+6. Pass
+expr = Any[1, 2, 3] with length = 3
+<AE> ::= ( <AE> <AE>+ )
+printing expr:
+	expr[1]=1 of type Int64
+	expr[2]=2 of type Int64
+	expr[3]=3 of type Int64
+fun_expr = Main.ExtInt.NumNode(1) --- type: Main.ExtInt.NumNode
+
+	expr[1] = 1 --- type: Int64
+
+	expr[1][1] = 1 --- type: Int64
+
+
+NOT LAMBDA
+	expr = Any[1, 2, 3]
+created param_dict = Dict{Any,Any}()
+going into loop
+	parse( expr[2] ) = Main.ExtInt.NumNode(2)
+	parse( expr[3] ) = Main.ExtInt.NumNode(3)
+
+Param_dict = Dict{Any,Any}(NumNode(2)=>NumNode(2),NumNode(3)=>NumNode(3))
+7. Pass
+expr = Any[:+, Any[:lambda, Any[:x], :x], 2] with length = 3
+expr = Any[:lambda, Any[:x], :x] with length = 3
+Parsing FuncDefNode
+param_array = Any[:x]
+8. Error
+expr = Any[:collatz, -1] with length = 2
+9. Error
+expr = Any[Any[:lambda, Any[], 4]] with length = 1
+expr = Any[:lambda, Any[], 4] with length = 3
+Parsing FuncDefNode
+param_array = Any[]
+10. Main.ExtInt.NumVal(4)
+
+        Failed tests:
+
+        Grade:
+10 out of 10
