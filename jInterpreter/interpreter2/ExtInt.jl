@@ -137,7 +137,7 @@ function parse( expr::Symbol )
 end
 
 function parse( expr::Array{Any} )
-	println("expr = ", expr, " with length = ", length(expr))
+	# println("expr = ", expr, " with length = ", length(expr))
 
 	# CASE 0: <AE> ::= id OR <AE> ::= (<AE>)
 	if length( expr ) == 1
@@ -175,7 +175,7 @@ function parse( expr::Array{Any} )
 			return If0Node( parse(expr[2]), parse(expr[3]), parse(expr[4]) )
 
 		elseif expr[1] == :with
-			println("\nParsing WithNode")
+			# println("\nParsing WithNode")
 			param_dict = Dict()
 			for i in 1:(length(expr[2]))
 
@@ -185,23 +185,17 @@ function parse( expr::Array{Any} )
 					throw(LispError("Arguments of cannot match grammar symbols"))
 				end
 
-				println("\tsymbol is valid")
-
 				# make sure arg has a unique name (not already in the list of args symbols)
 				if haskey(param_dict, expr[2][i][1] )
 					throw(LispError("Arguments of a multiple_args_with must have distinct names"))
 				end
-				println("\tsymbol is not repeated")
 
 				param_dict[ parse( expr[2][i][1] ) ] = parse( expr[2][i][2] )
 			end
-			println("param_dict = $param_dict")
 			return WithNode( param_dict, parse(expr[end]) )
 
 		elseif expr[1] == :lambda
-			println("Parsing FuncDefNode")
-
-			#TODO: take into account (lambda (x y) (+ x z))
+			# println("Parsing FuncDefNode")
 
 			param_array = []
 			for i in 1:(length(expr[2]))
@@ -216,29 +210,14 @@ function parse( expr::Array{Any} )
 				end
 				push!(param_array, expr[2][i])
 			end
-			println("param_array = $param_array")
 			return FunDefNode( param_array, parse(expr[end]) )
 		end
 
 	# CASE 3: if expr[1] is not a grammar symbol =>> (FunAppNode or Invalid)
 	else
-		println("<AE> ::= ( <AE> <AE>+ )")
-		println("printing expr:")
-		for i in 1:length(expr)
-			println("\texpr[$i]=",expr[i], " of type ", typeof(expr[i]))
-		end
 		fun_expr = parse( expr[1] )
 
-		println("fun_expr = $fun_expr --- type: ", typeof(fun_expr))
-		println("\n\texpr[1] = ", expr[1], " --- type: ", typeof(expr[1]))
-		println("\n\texpr[1][1] = ", expr[1][1], " --- type: ", typeof(expr[1][1]))
-
-
 		if typeof( fun_expr ) == FunDefNode
-			println("********************\nParsing FunAppNode with expr = ", expr, "\n********************\n")
-
-			# fun_expr = parse( expr[1] )
-
 			# make sure number of formal_args ==  number of actual_args
 			if length(fun_expr.formal) != ( length(expr)-1 )
 				throw(LispError("FunAppNode Error: number of actual args does not match number of formal args"))
@@ -257,20 +236,16 @@ function parse( expr::Array{Any} )
 				param_dict[ parse(p) ] = current_actual
 				index += 1
 			end
-			println("ABOUT to RETURN FunAppNode.\nparam_dict = $param_dict")
+
 			return FunAppNode( fun_expr, param_dict )
 
 		else
-			println("\n\nNOT LAMBDA\n\texpr = $expr")
 			param_dict = Dict()
-			println("created param_dict = $param_dict\ngoing into loop")
 			for i in 2:length(expr)
-				println("\tparse( expr[$i] ) = ", parse(expr[i]))
 				param_dict[ parse(i) ] = parse(expr[i])
 			end
-			println("\nParam_dict = $param_dict")
+
 			return FunAppNode(fun_expr, param_dict)
-			# throw(LispError("Invalid/Undefined operator!"))
 		end
 	end
 end
@@ -364,17 +339,13 @@ function calc( ast::FunDefNode, env::Environment )
 end
 
 function calc( ast::FunAppNode, env::Environment )
-	println("\nCalculating FunAppNode\n\tAST = ", ast)
-
-    closure_val = calc( ast.fun_expr, env )
+	closure_val = calc( ast.fun_expr, env )
 
 	if ( typeof(closure_val) != ClosureVal )
 		throw( LispError("FunAppNode: fun_expr returns wrong type (not ClosureVal"))
 	end
 
 	ext_env = closure_val.env
-	println("FunAppNode: ast.arg_expr is ", ast.arg_expr, " of type ", typeof(ast.arg_expr))
-
 	for (k,v) in ast.arg_expr
 		binding_val = calc( v, ext_env )
 		ext_env = ExtendedEnv( k.sym, binding_val, ext_env )
@@ -395,7 +366,7 @@ end
 function interp( cs::AbstractString )
 	lxd = Lexer.lex( cs )
     ast = parse( lxd )
-	println("\nDONE parsing\n\tast = $ast")
+	# println("\nDONE parsing\n\tast = $ast")
     return calc( ast, EmptyEnv() )
 end
 
