@@ -7,43 +7,6 @@
 # and with -> function application translation.
 #
 
-
-# Syntactic Re-write:
-#
-# Optimization:
-#     - literal folding
-#     - head code elimination
-#     - CSE
-#
-# Static Type Checking
-
-
-# AST pre-processing ( between Parser -- parse & Translator -- Calc )
-#   function: analyze()
-
-# 1. analyze( ast::NumNode OR ast::VarRefNode )
-#         return ast #leaves of tree. keep same
-#    end
-#
-
-# Literal Folding:
-#
-# recursively analyze lhs and rhs -> left and right
-# test: if left and right are NumNode => Fold Literal
-#2. analyze ( ast::BinopNode )
-    # if typeof(left) == NumNode && typeof(right) == NumNode
-    #     return NumNode(left.n + right.n) # calc would expect env. just calc it -> NumNode
-    # else
-    #     return PlusNode(left, right) # dont have to analyze lhs and rhs because already done.
-    # end
-# 3. Look at analyze for If0
-
-# Syntactic Sugar:
-# with -> lambda in some cases #do both
-
-
-
-
 module CI4
 
 push!(LOAD_PATH, pwd())
