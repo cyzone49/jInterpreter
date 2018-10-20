@@ -74,7 +74,7 @@ end
 
 function testContains(f, param, reg, num)
   try
-    answer = string(ismatch(reg, removeNL(f(param))))
+    answer = string(occursin(reg, removeNL(f(param))))
     println(testNum(num) * answer)
   catch Y
     println(testNum(num) * removeNL(Y))
