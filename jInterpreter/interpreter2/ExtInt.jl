@@ -172,12 +172,20 @@ function parse( expr::Array{Any} )
 
 		if (expr[1] == (:if0)) #if0 always has 4 arguments: :if0, condition, zerobranch ,nonzero_branch
 			# println("\nParsing If0Node")
+			if (length(expr) != 4)
+				throw(LispError("Invalid number of Arguments. If0 takes in 3 args"))
+			end
 			return If0Node( parse(expr[2]), parse(expr[3]), parse(expr[4]) )
 
 		elseif expr[1] == :with
 			# println("\nParsing WithNode")
 			param_dict = Dict()
+			# println(expr[2], " type = ", typeof(expr[2][1]))
 			for i in 1:(length(expr[2]))
+				# println(" $i type = ", typeof(expr[2][i]))
+				if ( typeof( expr[2][i] ) != Array{Any,1} )
+					throw(LispError("With: invalid representation of binding"))
+				end
 
 				# make sure arg does not match grammar symbols
 				# if haskey( opDict, expr[2][i][1] ) || ( expr[2][i][1] in opArray )
