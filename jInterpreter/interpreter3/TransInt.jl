@@ -85,6 +85,10 @@ struct BinopNode <: AE
 	rhs::AE
 end
 
+struct PlusNode <: AE
+	operands::Array{Any}
+end
+
 struct SoloNode <: AE
 	op::Function
 	n::AE
@@ -162,7 +166,22 @@ function parse( expr::Array{Any} )
 			end
 			return BinopNode( opDict[ expr[1] ], parse( expr[2] ), parse( expr[3] ) )
 		else
-			throw(LispError("Invalid argument numbers!"))
+			if ( expr[1] == :+ )
+				println("it's plusNode. ", expr[2:end])
+				if ( length(expr[2:end]) < 2 )
+					throw(LispError("Invalid argument numbers!"))
+				end
+				pn_operands = []
+				for operand in expr[2:end]
+					push!( pn_operands, parse( operand ) )
+				end
+				println("PlusNode operands array = $pn_operands")
+				return PlusNode( pn_operands )
+
+			else # more than 2 args but not a Plus Op => Invalid
+				throw(LispError("Invalid argument numbers!"))
+			end
+
 		end
 
 
@@ -296,6 +315,7 @@ function analyze( ast::SoloNode )
 end
 
 function analyze( ast::BinopNode )
+	println("Starting analyzing BinopNode : $ast")
     alhs = analyze( ast.lhs )
     arhs = analyze( ast.rhs )
 
@@ -311,6 +331,27 @@ function analyze( ast::BinopNode )
     end
 
     return BinopNode( ast.op, alhs, arhs )
+end
+
+# <AE> ::= (op <AE> <AE>)
+# struct BinopNode <: AE
+# 	op::Function
+# 	lhs::AE
+# 	rhs::AE
+# end
+#
+# struct PlusNode <: AE
+# 	operands::Array{Any}
+# end
+function analyze( ast::PlusNode )
+	println("analyzing: plusnode = $ast")
+	if ( length(ast.operands) == 2 )
+		println("base case")
+		return analyze( BinopNode( +, ast.operands[1], ast.operands[2] ) )
+	else
+		println("not done")
+		return analyze( BinopNode( +, ast.operands[1], analyze( PlusNode( ast.operands[2:end] ) ) ) )
+	end
 end
 
 function analyze( ast::If0Node )
