@@ -1,0 +1,130 @@
+        Correct output:
+1. Pass
+2. Pass
+3. Pass
+4. Pass
+5. false
+6. false
+7. Main.TransInt.NumVal(1)
+8. Main.TransInt.NumVal(6)
+9. Main.TransInt.NumVal(6)
+
+        Your output:
+expr = Any[:and, 1, 2, 3, 3] with length = 5
+	and_param = Any[NumNode(1), NumNode(2), NumNode(3), NumNode(3)]
+1. Pass
+expr = Any[:and, Any[:and, 1, 2], :a] with length = 3
+expr = Any[:and, 1, 2] with length = 3
+	and_param = Any[NumNode(1), NumNode(2)]
+	and_param = Any[AndNode(Any[NumNode(1), NumNode(2)]), VarRefNode(:a)]
+2. Pass
+expr = Any[:+, 1, 2, 3, 4] with length = 5
+it's plusNode. Any[1, 2, 3, 4]
+PlusNode operands array = Any[NumNode(1), NumNode(2), NumNode(3), NumNode(4)]
+3. Pass
+expr = Any[:+, Any[:+, 1, 2, 3], 2] with length = 3
+expr = Any[:+, 1, 2, 3] with length = 4
+it's plusNode. Any[1, 2, 3]
+PlusNode operands array = Any[NumNode(1), NumNode(2), NumNode(3)]
+4. Pass
+expr = Any[:with, Any[Any[:x, 1]], :x] with length = 3
+Analyzing WithNode
+		 Main.TransInt.WithNode(Dict{Any,Any}(VarRefNode(:x)=>NumNode(1)), Main.TransInt.VarRefNode(:x))
+		Main.TransInt.VarRefNode(:x) => Main.TransInt.NumNode(1)
+	fdn = Main.TransInt.FunDefNode(Any[VarRefNode(:x)], Main.TransInt.VarRefNode(:x))
+	fan_arg_expr = Dict{Any,Any}(VarRefNode(:x)=>NumNode(1))
+5. false
+expr = Any[:and, 1, 2, 3] with length = 4
+	and_param = Any[NumNode(1), NumNode(2), NumNode(3)]
+
+analyzing: AndNode = Main.TransInt.AndNode(Any[NumNode(1), NumNode(2), NumNode(3)])
+not done
+
+analyzing: AndNode = Main.TransInt.AndNode(Any[NumNode(2), NumNode(3)])
+not done
+
+analyzing: AndNode = Main.TransInt.AndNode(Any[NumNode(3)])
+base case
+ analyze( ast.args_list[1] = Main.TransInt.NumNode(3)
+
+analyzing: If0Node Main.TransInt.If0Node(Main.TransInt.NumNode(3), Main.TransInt.NumNode(0), Main.TransInt.NumNode(1))
+	acond = Main.TransInt.NumNode(3)
+1 branch: Main.TransInt.NumNode(1)
+
+analyzing: If0Node Main.TransInt.If0Node(Main.TransInt.NumNode(2), Main.TransInt.NumNode(0), Main.TransInt.NumNode(1))
+	acond = Main.TransInt.NumNode(2)
+1 branch: Main.TransInt.NumNode(1)
+
+analyzing: If0Node Main.TransInt.If0Node(Main.TransInt.NumNode(1), Main.TransInt.NumNode(0), Main.TransInt.NumNode(1))
+	acond = Main.TransInt.NumNode(1)
+1 branch: Main.TransInt.NumNode(1)
+6. false
+expr = Any[:and, 1, 2] with length = 3
+	and_param = Any[NumNode(1), NumNode(2)]
+
+analyzing: AndNode = Main.TransInt.AndNode(Any[NumNode(1), NumNode(2)])
+not done
+
+analyzing: AndNode = Main.TransInt.AndNode(Any[NumNode(2)])
+base case
+ analyze( ast.args_list[1] = Main.TransInt.NumNode(2)
+
+analyzing: If0Node Main.TransInt.If0Node(Main.TransInt.NumNode(2), Main.TransInt.NumNode(0), Main.TransInt.NumNode(1))
+	acond = Main.TransInt.NumNode(2)
+1 branch: Main.TransInt.NumNode(1)
+
+analyzing: If0Node Main.TransInt.If0Node(Main.TransInt.NumNode(1), Main.TransInt.NumNode(0), Main.TransInt.NumNode(1))
+	acond = Main.TransInt.NumNode(1)
+1 branch: Main.TransInt.NumNode(1)
+7. Main.TransInt.NumVal(1)
+expr = Any[:+, 1, 2, 3] with length = 4
+it's plusNode. Any[1, 2, 3]
+PlusNode operands array = Any[NumNode(1), NumNode(2), NumNode(3)]
+analyzing: plusnode = Main.TransInt.PlusNode(Any[NumNode(1), NumNode(2), NumNode(3)])
+not done
+analyzing: plusnode = Main.TransInt.PlusNode(Any[NumNode(2), NumNode(3)])
+base case
+Starting analyzing BinopNode : Main.TransInt.BinopNode(+, Main.TransInt.NumNode(2), Main.TransInt.NumNode(3))
+Starting analyzing BinopNode : Main.TransInt.BinopNode(+, Main.TransInt.NumNode(1), Main.TransInt.NumNode(5))
+8. Main.TransInt.NumVal(6)
+expr = Any[:*, Any[:and, 1, 2, 3], Any[:+, 1, 2, 3]] with length = 3
+expr = Any[:and, 1, 2, 3] with length = 4
+	and_param = Any[NumNode(1), NumNode(2), NumNode(3)]
+expr = Any[:+, 1, 2, 3] with length = 4
+it's plusNode. Any[1, 2, 3]
+PlusNode operands array = Any[NumNode(1), NumNode(2), NumNode(3)]
+Starting analyzing BinopNode : Main.TransInt.BinopNode(*, Main.TransInt.AndNode(Any[NumNode(1), NumNode(2), NumNode(3)]), Main.TransInt.PlusNode(Any[NumNode(1), NumNode(2), NumNode(3)]))
+
+analyzing: AndNode = Main.TransInt.AndNode(Any[NumNode(1), NumNode(2), NumNode(3)])
+not done
+
+analyzing: AndNode = Main.TransInt.AndNode(Any[NumNode(2), NumNode(3)])
+not done
+
+analyzing: AndNode = Main.TransInt.AndNode(Any[NumNode(3)])
+base case
+ analyze( ast.args_list[1] = Main.TransInt.NumNode(3)
+
+analyzing: If0Node Main.TransInt.If0Node(Main.TransInt.NumNode(3), Main.TransInt.NumNode(0), Main.TransInt.NumNode(1))
+	acond = Main.TransInt.NumNode(3)
+1 branch: Main.TransInt.NumNode(1)
+
+analyzing: If0Node Main.TransInt.If0Node(Main.TransInt.NumNode(2), Main.TransInt.NumNode(0), Main.TransInt.NumNode(1))
+	acond = Main.TransInt.NumNode(2)
+1 branch: Main.TransInt.NumNode(1)
+
+analyzing: If0Node Main.TransInt.If0Node(Main.TransInt.NumNode(1), Main.TransInt.NumNode(0), Main.TransInt.NumNode(1))
+	acond = Main.TransInt.NumNode(1)
+1 branch: Main.TransInt.NumNode(1)
+analyzing: plusnode = Main.TransInt.PlusNode(Any[NumNode(1), NumNode(2), NumNode(3)])
+not done
+analyzing: plusnode = Main.TransInt.PlusNode(Any[NumNode(2), NumNode(3)])
+base case
+Starting analyzing BinopNode : Main.TransInt.BinopNode(+, Main.TransInt.NumNode(2), Main.TransInt.NumNode(3))
+Starting analyzing BinopNode : Main.TransInt.BinopNode(+, Main.TransInt.NumNode(1), Main.TransInt.NumNode(5))
+9. Main.TransInt.NumVal(6)
+
+        Failed tests:
+
+        Grade:
+9 out of 9

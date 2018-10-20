@@ -32,7 +32,7 @@ function collatz_helper( n::Real, num_iters::Int )
 end
 
 opDict = Dict(:+ => +, :- => -, :* => *, :/ => /, :mod => mod, :collatz => collatz)
-opArray = [:if0, :with, :lambda, :mod, :collatz, :id]
+opArray = [:if0, :with, :lambda, :mod, :collatz, :id, :and]
 
 function symbol_is_valid( s::Symbol )
 	# make sure arg does not match grammar symbols
@@ -119,6 +119,11 @@ struct FunAppNode <: AE
   arg_expr::Dict{Any, Any}
 end
 
+#(and <AE> <AE> <AE>*)
+struct AndNode <: AE
+	args_list::Array{Any}
+end
+
 
 
 
@@ -186,7 +191,7 @@ function parse( expr::Array{Any} )
 
 
 	# CASE 2: including op from interpreter 2 [ :if0, :lambda, :with ]
-	elseif ( expr[1] == :if0 ) || ( expr[1] == :with ) || ( expr[1] == :lambda )
+	elseif ( expr[1] == :if0 ) || ( expr[1] == :with ) || ( expr[1] == :lambda ) || ( expr[1] == :and )
 
 		if (expr[1] == (:if0)) #if0 always has 4 arguments: :if0, condition, zerobranch ,nonzero_branch
 			# println("\nParsing If0Node")
@@ -194,6 +199,17 @@ function parse( expr::Array{Any} )
 				throw(LispError("Invalid number of Arguments. If0 takes in 3 args"))
 			end
 			return If0Node( parse(expr[2]), parse(expr[3]), parse(expr[4]) )
+
+		elseif expr[1] == :and
+			if ( length( expr[2:end] ) < 2 )
+				throw(LispError("Invalid number of Arguments. And takes at least 2 args <AE><AE><AE>*"))
+			end
+			and_param = []
+			for p in expr[2:end]
+				push!(and_param, parse( p ) )
+			end
+			println("\tand_param = $and_param")
+			return AndNode(and_param)
 
 		elseif expr[1] == :with
 			# println("\nParsing WithNode")
@@ -333,16 +349,6 @@ function analyze( ast::BinopNode )
     return BinopNode( ast.op, alhs, arhs )
 end
 
-# <AE> ::= (op <AE> <AE>)
-# struct BinopNode <: AE
-# 	op::Function
-# 	lhs::AE
-# 	rhs::AE
-# end
-#
-# struct PlusNode <: AE
-# 	operands::Array{Any}
-# end
 function analyze( ast::PlusNode )
 	println("analyzing: plusnode = $ast")
 	if ( length(ast.operands) == 2 )
@@ -355,12 +361,16 @@ function analyze( ast::PlusNode )
 end
 
 function analyze( ast::If0Node )
+	println("\nanalyzing: If0Node $ast")
     acond = analyze( ast.condition )
+	println("\tacond = $acond")
 
     if typeof( acond ) == NumNode
         if acond.n == 0
+			println("0 branch: $(ast.zero_branch)")
             return analyze( ast.zero_branch )
         else
+			println("1 branch: $(ast.nonzero_branch)")
             return analyze( ast.nonzero_branch )
         end
     end
@@ -368,6 +378,19 @@ function analyze( ast::If0Node )
     azb = analyze( ast.zero_branch )
     anzb = analyze( ast.nonzero_branch )
     return If0Node( acond, azb, anzb )
+end
+
+function analyze( ast::AndNode )
+	println("\nanalyzing: AndNode = $ast")
+	if ( length(ast.args_list) == 1 )
+		println("base case")
+		println(" analyze( ast.args_list[1] = $( analyze( ast.args_list[1] ))")
+		return analyze( If0Node( analyze( ast.args_list[1] ), NumNode(0), NumNode(1) ) )
+	else
+		println("not done")
+		return analyze( If0Node( analyze( ast.args_list[1] ), NumNode(0), analyze( AndNode( ast.args_list[2:end] ) ) ) )
+		# return analyze( BinopNode( +, ast.operands[1], analyze( PlusNode( ast.operands[2:end] ) ) ) )
+	end
 end
 
 function analyze( ast::WithNode )
