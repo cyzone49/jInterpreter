@@ -59,7 +59,7 @@ struct NumVal <: RetVal
 end
 
 struct ClosureVal <: RetVal
-  formal::Array{Symbol}
+  formal::Array{Any}
   body::AE
   env::Environment
 end
@@ -136,7 +136,7 @@ function parse( expr::Symbol )
 end
 
 function parse( expr::Array{Any} )
-	# println("expr = ", expr, " with length = ", length(expr))
+	println("expr = ", expr, " with length = ", length(expr))
 
 	# CASE 0: <AE> ::= id OR <AE> ::= (<AE>)
 	if length( expr ) == 1
@@ -179,9 +179,11 @@ function parse( expr::Array{Any} )
 		elseif expr[1] == :with
 			# println("\nParsing WithNode")
 			param_dict = Dict()
-			println(expr[2], " type = ", typeof(expr[2][1]))
+			# println(expr[2], " type = ", typeof(expr[2][1]))
 			for i in 1:(length(expr[2]))
-				println(" $i type = ", typeof(expr[2][i]))
+				# println(" $i type = ", typeof(expr[2][i]))
+
+				#make sure binding is in correct syntax ((x 1)) instead of (x 1)
 				if ( typeof( expr[2][i] ) != Array{Any,1} )
 					throw(LispError("With: invalid representation of binding"))
 				end
@@ -202,9 +204,15 @@ function parse( expr::Array{Any} )
 			return WithNode( param_dict, parse(expr[end]) )
 
 		elseif expr[1] == :lambda
-			# println("Parsing FuncDefNode")
+			println("Parsing FunDefNode")
 
 			param_array = []
+
+			#make sure Param is in correct syntax ( x ) instead of x
+			if ( typeof( expr[2]) != Array{Any,1} )
+				throw(LispError("FunDefNode -- lambda: invalid representation of param"))
+			end
+
 			for i in 1:(length(expr[2]))
 				# make sure arg does not match grammar symbols
 				# if haskey( opDict, expr[2][i] ) || ( expr[2][i] in opArray )
@@ -215,8 +223,9 @@ function parse( expr::Array{Any} )
 				if expr[2][i] in param_array
 					throw(LispError("Arguments of a multiple_args_func must have distinct names"))
 				end
-				push!(param_array, expr[2][i])
+				push!(param_array, parse(expr[2][i]) )
 			end
+			println("PARSE: about to return FunDefNode")
 			return FunDefNode( param_array, parse(expr[end]) )
 		end
 
@@ -233,14 +242,18 @@ function parse( expr::Array{Any} )
 			# create Dict to store list of (formal_arg: actual_arg)
 			param_dict = Dict()
 			index = 2
+
+			println("type of fun_expr.formal is $(typeof(fun_expr.formal))\n\tfun_expr.formal = $(fun_expr.formal)")
 			for p in fun_expr.formal
+				println()
 				current_actual = parse( expr[index] ) # calculate actual_arg[i] =>> should return NumNode
 
 				# make sure actual_args calculates to a number (type NumNode before calc)
 				if ( typeof( current_actual ) != NumNode )
 					throw(LispError("FunAppNode Error: Invalid Actual Param Arguments"))
 				end
-				param_dict[ parse(p) ] = current_actual
+				println("\tcurrentactual = $current_actual of type $(typeof(current_actual))")
+				param_dict[ p ] = current_actual
 				index += 1
 			end
 
@@ -273,46 +286,80 @@ function analyze( ast::VarRefNode )
     return ast
 end
 
+function analyze( ast::SoloNode )
+	aOperand = analyze( ast.n )
+
+	if typeof(aOperand) == NumNode
+		return NumNode( ast.op( aOperand.n ) )
+	end
+	return SoloNode( ast.op, aOperand )
+end
+
 function analyze( ast::BinopNode )
     alhs = analyze( ast.lhs )
     arhs = analyze( ast.rhs )
 
     if typeof(alhs) == NumNode && typeof(arhs) == NumNode
+
+		if ( ast.op == / ) #ast.op after parse is now a function, not symbol
+			if (arhs == NumNode(0))
+				throw( LispError("At Analyze: Cannot divide by 0") )
+			end
+		end
+
         return NumNode( ast.op( alhs.n, arhs.n ) )
     end
 
-    return BinopNode( alhs, arhs )
-end
-
-function analyze( ast::WithNode )
-    # transform from a with expression to application of a function
-    fdn = FuncDefNode( ast.sym, analyze( ast.body ) )
-    return FuncAppNode( fdn, analyze( ast.binding_expr ) )
+    return BinopNode( ast.op, alhs, arhs )
 end
 
 function analyze( ast::If0Node )
-    acond = analyze( ast.cond )
+    acond = analyze( ast.condition )
 
     if typeof( acond ) == NumNode
         if acond.n == 0
-            return analyze( ast.zerobranch )
+            return analyze( ast.zero_branch )
         else
-            return analyze( ast.nzerobranch )
+            return analyze( ast.nonzero_branch )
         end
     end
 
-    azb = analyze( ast.zerobranch )
-    anzb = analyze( ast.nzerobranch )
+    azb = analyze( ast.zero_branch )
+    anzb = analyze( ast.nonzero_branch )
     return If0Node( acond, azb, anzb )
 end
 
-# function analyze( ast::FuncDefNode )
-#     return FuncDefNode( ast.formal_parameter, analyze( ast.body ) )
-# end
+function analyze( ast::WithNode )
+	println("Analyzing WithNode\n\t\t $ast")
+
+	fdn_formal_array = []
+	fan_arg_expr = Dict()
+	for i in ast.param
+		println("\t\t$(i[1]) => $(i[2])")
+		push!(fdn_formal_array, i[1])
+		fan_arg_expr[ i[1] ] = i[2]
+	end
+	fdn = FunDefNode( fdn_formal_array, analyze( ast.body ))
+	println("\tfdn = $fdn")
+	println("\tfan_arg_expr = $fan_arg_expr")
+	# return ast
+	return FunAppNode( fdn, fan_arg_expr )
+end
+
+function analyze( ast::FunDefNode )
+	println("Analyzing FunDefNode\n\t\t $ast")
+    return FunDefNode( ast.formal, analyze( ast.fun_body ) )
+end
 #
-# function analyze( ast::FuncAppNode )
-#     return FuncAppNode( analyze( ast.fun_expr), analyze( ast.arg_expr ) )
-# end
+function analyze( ast::FunAppNode )
+	println("Analyzing FunAppNode\n\t\t $ast")
+	fan_arg_expr = Dict()
+	for i in ast.arg_expr
+		fan_arg_expr[ analyze( i[1] ) ] = analyze( i[2] )
+	end
+	# return ast
+    return FunAppNode( analyze( ast.fun_expr), fan_arg_expr )
+end
 
 #
 # ==================================================
@@ -428,6 +475,7 @@ function interp( cs::AbstractString )
     lxd = Lexer.lex( cs )
     ast = parse( lxd )
     revised_ast = analyze(ast)
+	println("\nFinished Analyzing. revised_ast is $revised_ast")
     return calc( revised_ast, EmptyEnv() )
 end
 
