@@ -145,7 +145,7 @@ function parse( expr::Symbol )
 end
 
 function parse( expr::Array{Any} )
-	println("expr = ", expr, " with length = ", length(expr))
+	# println("expr = ", expr, " with length = ", length(expr))
 
 	# CASE 0: <AE> ::= id OR <AE> ::= (<AE>)
 	if length( expr ) == 1
@@ -172,7 +172,6 @@ function parse( expr::Array{Any} )
 			return BinopNode( opDict[ expr[1] ], parse( expr[2] ), parse( expr[3] ) )
 		else
 			if ( expr[1] == :+ )
-				println("it's plusNode. ", expr[2:end])
 				if ( length(expr[2:end]) < 2 )
 					throw(LispError("Invalid argument numbers!"))
 				end
@@ -180,7 +179,6 @@ function parse( expr::Array{Any} )
 				for operand in expr[2:end]
 					push!( pn_operands, parse( operand ) )
 				end
-				println("PlusNode operands array = $pn_operands")
 				return PlusNode( pn_operands )
 
 			else # more than 2 args but not a Plus Op => Invalid
@@ -208,7 +206,7 @@ function parse( expr::Array{Any} )
 			for p in expr[2:end]
 				push!(and_param, parse( p ) )
 			end
-			println("\tand_param = $and_param")
+
 			return AndNode(and_param)
 
 		elseif expr[1] == :with
@@ -239,7 +237,7 @@ function parse( expr::Array{Any} )
 			return WithNode( param_dict, parse(expr[end]) )
 
 		elseif expr[1] == :lambda
-			println("Parsing FunDefNode")
+			# println("Parsing FunDefNode")
 
 			param_array = []
 
@@ -260,7 +258,7 @@ function parse( expr::Array{Any} )
 				end
 				push!(param_array, parse(expr[2][i]) )
 			end
-			println("PARSE: about to return FunDefNode")
+
 			return FunDefNode( param_array, parse(expr[end]) )
 		end
 
@@ -278,16 +276,14 @@ function parse( expr::Array{Any} )
 			param_dict = Dict()
 			index = 2
 
-			println("type of fun_expr.formal is $(typeof(fun_expr.formal))\n\tfun_expr.formal = $(fun_expr.formal)")
 			for p in fun_expr.formal
-				println()
 				current_actual = parse( expr[index] ) # calculate actual_arg[i] =>> should return NumNode
 
 				# make sure actual_args calculates to a number (type NumNode before calc)
 				if ( typeof( current_actual ) != NumNode )
 					throw(LispError("FunAppNode Error: Invalid Actual Param Arguments"))
 				end
-				println("\tcurrentactual = $current_actual of type $(typeof(current_actual))")
+
 				param_dict[ p ] = current_actual
 				index += 1
 			end
@@ -331,7 +327,7 @@ function analyze( ast::SoloNode )
 end
 
 function analyze( ast::BinopNode )
-	println("Starting analyzing BinopNode : $ast")
+	# println("Starting analyzing BinopNode : $ast")
     alhs = analyze( ast.lhs )
     arhs = analyze( ast.rhs )
 
@@ -350,27 +346,24 @@ function analyze( ast::BinopNode )
 end
 
 function analyze( ast::PlusNode )
-	println("analyzing: plusnode = $ast")
+	# println("analyzing: plusnode = $ast")
 	if ( length(ast.operands) == 2 )
-		println("base case")
+		# println("base case")
 		return analyze( BinopNode( +, ast.operands[1], ast.operands[2] ) )
 	else
-		println("not done")
+		# println("not done")
 		return analyze( BinopNode( +, ast.operands[1], analyze( PlusNode( ast.operands[2:end] ) ) ) )
 	end
 end
 
 function analyze( ast::If0Node )
-	println("\nanalyzing: If0Node $ast")
+	# println("\nanalyzing: If0Node $ast")
     acond = analyze( ast.condition )
-	println("\tacond = $acond")
 
     if typeof( acond ) == NumNode
         if acond.n == 0
-			println("0 branch: $(ast.zero_branch)")
             return analyze( ast.zero_branch )
         else
-			println("1 branch: $(ast.nonzero_branch)")
             return analyze( ast.nonzero_branch )
         end
     end
@@ -381,42 +374,38 @@ function analyze( ast::If0Node )
 end
 
 function analyze( ast::AndNode )
-	println("\nanalyzing: AndNode = $ast")
+	# println("\nanalyzing: AndNode = $ast")
 	if ( length(ast.args_list) == 1 )
-		println("base case")
-		println(" analyze( ast.args_list[1] = $( analyze( ast.args_list[1] ))")
+		# println("base case")
 		return analyze( If0Node( analyze( ast.args_list[1] ), NumNode(0), NumNode(1) ) )
 	else
-		println("not done")
+		# println("not done")
 		return analyze( If0Node( analyze( ast.args_list[1] ), NumNode(0), analyze( AndNode( ast.args_list[2:end] ) ) ) )
 		# return analyze( BinopNode( +, ast.operands[1], analyze( PlusNode( ast.operands[2:end] ) ) ) )
 	end
 end
 
 function analyze( ast::WithNode )
-	println("Analyzing WithNode\n\t\t $ast")
+	# println("Analyzing WithNode\n\t\t $ast")
 
 	fdn_formal_array = []
 	fan_arg_expr = Dict()
 	for i in ast.param
-		println("\t\t$(i[1]) => $(i[2])")
 		push!(fdn_formal_array, i[1])
 		fan_arg_expr[ i[1] ] = i[2]
 	end
 	fdn = FunDefNode( fdn_formal_array, analyze( ast.body ))
-	println("\tfdn = $fdn")
-	println("\tfan_arg_expr = $fan_arg_expr")
 	# return ast
 	return FunAppNode( fdn, fan_arg_expr )
 end
 
 function analyze( ast::FunDefNode )
-	println("Analyzing FunDefNode\n\t\t $ast")
+	# println("Analyzing FunDefNode\n\t\t $ast")
     return FunDefNode( ast.formal, analyze( ast.fun_body ) )
 end
 #
 function analyze( ast::FunAppNode )
-	println("Analyzing FunAppNode\n\t\t $ast")
+	# println("Analyzing FunAppNode\n\t\t $ast")
 	fan_arg_expr = Dict()
 	for i in ast.arg_expr
 		fan_arg_expr[ analyze( i[1] ) ] = analyze( i[2] )
@@ -539,7 +528,7 @@ function interp( cs::AbstractString )
     lxd = Lexer.lex( cs )
     ast = parse( lxd )
     revised_ast = analyze(ast)
-	println("\nFinished Analyzing. revised_ast is $revised_ast")
+	# println("\nFinished Analyzing. revised_ast is $revised_ast")
     return calc( revised_ast, EmptyEnv() )
 end
 
